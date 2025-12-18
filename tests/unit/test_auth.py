@@ -11,19 +11,11 @@ class TestTwitterAuthenticator:
         
         assert auth.settings == test_settings
     
-    def test_init_with_empty_token_raises_error(self):
-        settings = Settings(
-            debug=True,
-            host="0.0.0.0",
-            port=8000,
-            twitter_bearer_token="",
-            twitter_api_base_url="https://api.twitter.com/2",
-            log_level="INFO",
-            log_format="json",
-        )
+    def test_init_with_empty_token_raises_error(self, test_settings: Settings):
+        test_settings.twitter_bearer_token = ""
         
         with pytest.raises(TwitterAuthenticationError) as exc_info:
-            TwitterAuthenticator(settings)
+            TwitterAuthenticator(test_settings)
         
         assert "Twitter Bearer Token is not configured" in str(exc_info.value)
     

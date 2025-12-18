@@ -4,16 +4,19 @@ import pytest
 from unittest.mock import AsyncMock
 
 from app.application.services import TweetService
-from app.bootstrap.config import Settings
 from app.core.entities import Tweet, Account
 
 
 class TestTweetService:
     @pytest.mark.asyncio
     async def test_get_tweets_by_hashtag_cache_miss(
-        self, mock_cache_service, test_settings: Settings
+        self, tweet_service: TweetService
     ):
-        mock_repository = AsyncMock()
+        """Test getting tweets from repository when cache misses."""
+        # Mock cache miss
+        tweet_service.cache_service.get = AsyncMock(return_value=None)
+        
+        # Mock repository response
         mock_tweets = [
             Tweet(
                 account=Account(fullname="Test", href="/test", id=123),
@@ -25,21 +28,23 @@ class TestTweetService:
                 text="Test tweet",
             )
         ]
-        mock_repository.get_tweets_by_hashtag.return_value = mock_tweets
-        mock_cache_service.get.return_value = None
+        tweet_service.tweet_repository.get_tweets_by_hashtag = AsyncMock(
+            return_value=mock_tweets
+        )
+        tweet_service.cache_service.set = AsyncMock()
         
-        service = TweetService(mock_repository, mock_cache_service, test_settings)
-        result = await service.get_tweets_by_hashtag("test")
+        result = await tweet_service.get_tweets_by_hashtag("test")
         
         assert result == mock_tweets
-        mock_repository.get_tweets_by_hashtag.assert_called_once_with("test", 30)
-        mock_cache_service.set.assert_called_once()
+        tweet_service.tweet_repository.get_tweets_by_hashtag.assert_called_once_with("test", 30)
+        tweet_service.cache_service.set.assert_called_once()
     
     @pytest.mark.asyncio
     async def test_get_tweets_by_hashtag_cache_hit(
-        self, mock_cache_service, test_settings: Settings
+        self, tweet_service: TweetService
     ):
-        mock_repository = AsyncMock()
+        """Test getting tweets from cache."""
+        # Mock cache hit
         cached_tweets = [
             Tweet(
                 account=Account(fullname="Cached", href="/cached", id=999),
@@ -51,19 +56,22 @@ class TestTweetService:
                 text="Cached tweet",
             )
         ]
-        mock_cache_service.get.return_value = cached_tweets
+        tweet_service.cache_service.get = AsyncMock(return_value=cached_tweets)
+        tweet_service.tweet_repository.get_tweets_by_hashtag = AsyncMock()
         
-        service = TweetService(mock_repository, mock_cache_service, test_settings)
-        result = await service.get_tweets_by_hashtag("test")
+        result = await tweet_service.get_tweets_by_hashtag("test")
         
         assert result == cached_tweets
-        mock_repository.get_tweets_by_hashtag.assert_not_called()
+        # Repository should not be called
+        tweet_service.tweet_repository.get_tweets_by_hashtag.assert_not_called()
     
     @pytest.mark.asyncio
     async def test_get_tweets_by_user(
-        self, mock_cache_service, test_settings: Settings
+        self, tweet_service: TweetService
     ):
-        mock_repository = AsyncMock()
+        """Test getting user tweets from repository."""
+        tweet_service.cache_service.get = AsyncMock(return_value=None)
+        
         mock_tweets = [
             Tweet(
                 account=Account(fullname="User", href="/user", id=456),
@@ -75,38 +83,38 @@ class TestTweetService:
                 text="User tweet",
             )
         ]
-        mock_repository.get_tweets_by_user.return_value = mock_tweets
-        mock_cache_service.get.return_value = None
+        tweet_service.tweet_repository.get_tweets_by_user = AsyncMock(
+            return_value=mock_tweets
+        )
+        tweet_service.cache_service.set = AsyncMock()
         
-        service = TweetService(mock_repository, mock_cache_service, test_settings)
-        result = await service.get_tweets_by_user("user")
+        result = await tweet_service.get_tweets_by_user("user")
         
         assert result == mock_tweets
-        mock_repository.get_tweets_by_user.assert_called_once_with("user", 30)
+        tweet_service.tweet_repository.get_tweets_by_user.assert_called_once_with("user", 30)
     
     @pytest.mark.asyncio
     async def test_normalize_limit_too_high(
-        self, mock_cache_service, test_settings: Settings
+        self, tweet_service: TweetService
     ):
-        mock_repository = AsyncMock()
-        mock_repository.get_tweets_by_hashtag.return_value = []
-        mock_cache_service.get.return_value = None
+        """Test that limit is capped at maximum."""
+        tweet_service.cache_service.get = AsyncMock(return_value=None)
+        tweet_service.tweet_repository.get_tweets_by_hashtag = AsyncMock(return_value=[])
         
-        service = TweetService(mock_repository, mock_cache_service, test_settings)
-        await service.get_tweets_by_hashtag("test", limit=200)
+        await tweet_service.get_tweets_by_hashtag("test", limit=200)
         
-        mock_repository.get_tweets_by_hashtag.assert_called_once_with("test", 100)
+        tweet_service.tweet_repository.get_tweets_by_hashtag.assert_called_once_with("test", 100)
     
     @pytest.mark.asyncio
     async def test_normalize_limit_too_low(
-        self, mock_cache_service, test_settings: Settings
+        self, tweet_service: TweetService
     ):
-        mock_repository = AsyncMock()
-        mock_repository.get_tweets_by_hashtag.return_value = []
-        mock_cache_service.get.return_value = None
+        """Test that limit defaults to 30 when 0."""
+        tweet_service.cache_service.get = AsyncMock(return_value=None)
+        tweet_service.tweet_repository.get_tweets_by_hashtag = AsyncMock(return_value=[])
         
-        service = TweetService(mock_repository, mock_cache_service, test_settings)
-        await service.get_tweets_by_hashtag("test", limit=0)
+        await tweet_service.get_tweets_by_hashtag("test", limit=0)
         
         # limit=0 is falsy, so default 30 is used
-        mock_repository.get_tweets_by_hashtag.assert_called_once_with("test", 30)
+        tweet_service.tweet_repository.get_tweets_by_hashtag.assert_called_once_with("test", 30)
+
