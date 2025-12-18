@@ -1,106 +1,27 @@
-"""Twitter API Service - Main Application"""
+from fastapi import FastAPI
 
-from fastapi import FastAPI, HTTPException
-
-from app.application.services import TweetService
-from app.bootstrap.config import get_settings
-from app.core.exceptions import TwitterAPIError
-from app.infrastructure.cache.cache_service import RedisCacheService
-from app.infrastructure.http.client import create_http_client
-from app.infrastructure.twitter.client import TwitterClient
-
-# Initialize settings, HTTP client, Twitter client, cache and service
-settings = get_settings()
-http_client = create_http_client(settings)
-twitter_client = TwitterClient(settings, http_client)
-cache_service = RedisCacheService(settings)
-tweet_service = TweetService(twitter_client, cache_service, settings)
+from app import __version__
+from app.bootstrap.routes import setup_routes
 
 # Create FastAPI app
 app = FastAPI(
     title="Twitter API Service",
-    description="RESTful API for fetching tweets from Twitter",
-    version="1.0.0"
+    version=__version__,
+    description="RESTful API for fetching tweets by hashtag and user",
 )
 
+# Setup routes
+setup_routes(app)
 
-@app.get("/")
-async def root():
-    """Health check endpoint"""
-    return {
-        "status": "healthy",
-        "service": "Twitter API Service",
-        "version": "1.0.0"
-    }
+if __name__ == "__main__":
+    import uvicorn
 
+    from app.bootstrap.config import get_settings
 
-@app.get("/hashtags/{hashtag}")
-async def get_tweets_by_hashtag(hashtag: str, limit: int = 30):
-    """
-    Get tweets by hashtag
-    
-    Args:
-        hashtag: Hashtag to search (e.g., 'Python')
-        limit: Number of tweets to retrieve (default: 30)
-    
-    Example:
-        GET /hashtags/Python?limit=40
-    """
-    try:
-        tweets = await tweet_service.get_tweets_by_hashtag(hashtag, limit)
-        
-        # Convert to dict for JSON response (matching spec format)
-        return [
-            {
-                "account": {
-                    "fullname": tweet.account.fullname,
-                    "href": tweet.account.href,
-                    "id": tweet.account.id
-                },
-                "date": tweet.date,
-                "hashtags": tweet.hashtags,
-                "likes": tweet.likes,
-                "replies": tweet.replies,
-                "retweets": tweet.retweets,
-                "text": tweet.text
-            }
-            for tweet in tweets
-        ]
-    except TwitterAPIError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message)
-
-
-@app.get("/users/{username}")
-async def get_user_tweets(username: str, limit: int = 30):
-    """
-    Get tweets from user's timeline
-    
-    Args:
-        username: Twitter username (e.g., 'twitter')
-        limit: Number of tweets to retrieve (default: 30)
-    
-    Example:
-        GET /users/twitter?limit=20
-    """
-    try:
-        tweets = await tweet_service.get_tweets_by_user(username, limit)
-        
-        # Convert to dict for JSON response (matching spec format)
-        return [
-            {
-                "account": {
-                    "fullname": tweet.account.fullname,
-                    "href": tweet.account.href,
-                    "id": tweet.account.id
-                },
-                "date": tweet.date,
-                "hashtags": tweet.hashtags,
-                "likes": tweet.likes,
-                "replies": tweet.replies,
-                "retweets": tweet.retweets,
-                "text": tweet.text
-            }
-            for tweet in tweets
-        ]
-    except TwitterAPIError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.message)
+    settings = get_settings()
+    uvicorn.run(
+        "app.main:app",
+        host=settings.host,
+        port=settings.port,
+        reload=settings.debug,
+    )
