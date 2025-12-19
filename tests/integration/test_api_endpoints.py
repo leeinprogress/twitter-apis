@@ -16,9 +16,9 @@ def mock_tweet_service():
 @pytest.fixture
 def client(mock_tweet_service):
     app.dependency_overrides[get_tweet_service] = lambda: mock_tweet_service
-    
+
     yield TestClient(app)
-    
+
     app.dependency_overrides.clear()
 
 
@@ -46,7 +46,7 @@ class TestHashtagEndpoint:
 
     def test_get_tweets_by_hashtag_success(self, client, mock_tweet_service, mock_tweets):
         mock_tweet_service.get_tweets_by_hashtag.return_value = mock_tweets
-        
+
         response = client.get("/api/v1/hashtags/Python?limit=30")
 
         assert response.status_code == 200
@@ -59,7 +59,7 @@ class TestHashtagEndpoint:
 
     def test_get_tweets_by_hashtag_default_limit(self, client, mock_tweet_service, mock_tweets):
         mock_tweet_service.get_tweets_by_hashtag.return_value = mock_tweets
-        
+
         response = client.get("/api/v1/hashtags/Python")
 
         assert response.status_code == 200
@@ -82,7 +82,7 @@ class TestUserEndpoint:
 
     def test_get_tweets_by_user_success(self, client, mock_tweet_service, mock_tweets):
         mock_tweet_service.get_tweets_by_user.return_value = mock_tweets
-        
+
         response = client.get("/api/v1/users/twitter?limit=20")
 
         assert response.status_code == 200
@@ -93,7 +93,7 @@ class TestUserEndpoint:
 
     def test_get_tweets_by_user_default_limit(self, client, mock_tweet_service, mock_tweets):
         mock_tweet_service.get_tweets_by_user.return_value = mock_tweets
-        
+
         response = client.get("/api/v1/users/twitter")
 
         assert response.status_code == 200

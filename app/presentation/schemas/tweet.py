@@ -17,11 +17,11 @@ class AccountSchema(BaseModel):
 class TweetSchema(BaseModel):
     account: AccountSchema
     date: str
-    hashtags: list[str] 
+    hashtags: list[str]
     likes: int = Field(ge=0)
     replies: int = Field(ge=0)
     retweets: int = Field(ge=0)
-    text: str  
+    text: str
 
     @classmethod
     def from_entity(cls, tweet: Tweet) -> TweetSchema:
@@ -32,9 +32,9 @@ class TweetSchema(BaseModel):
                 id=tweet.account.id,
             ),
             date=tweet.date,
-            hashtags=tweet.hashtags, 
+            hashtags=tweet.hashtags,
             likes=tweet.likes,
             replies=tweet.replies,
             retweets=tweet.retweets,
-            text=tweet.text, 
+            text=tweet.text,
         )

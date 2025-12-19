@@ -6,14 +6,14 @@ from app.core.entities import Account, Tweet
 class TestAccount:
     def test_create_account(self):
         account = Account(fullname="Test User", href="/testuser", id=123)
-        
+
         assert account.fullname == "Test User"
         assert account.href == "/testuser"
         assert account.id == 123
-    
+
     def test_account_is_immutable(self):
         account = Account(fullname="Test User", href="/testuser", id=123)
-        
+
         with pytest.raises(AttributeError):
             account.fullname = "New Name"  # type: ignore
 
@@ -30,12 +30,12 @@ class TestTweet:
             retweets=3,
             text="Test tweet",
         )
-        
+
         assert tweet.account == account
         assert tweet.text == "Test tweet"
         assert tweet.likes == 10
         assert tweet.hashtags == ["#test"]
-    
+
     def test_tweet_is_immutable(self):
         account = Account(fullname="Test User", href="/testuser", id=123)
         tweet = Tweet(
@@ -47,7 +47,7 @@ class TestTweet:
             retweets=3,
             text="Test tweet",
         )
-        
+
         with pytest.raises(AttributeError):
             tweet.text = "Modified"  # type: ignore
 

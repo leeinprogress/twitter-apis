@@ -1,5 +1,5 @@
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 from app.core.entities import Account, Tweet
 from app.utils.logger import get_logger
@@ -11,20 +11,20 @@ def map_tweet(tweet_data: dict[str, Any], includes: dict[str, Any]) -> Tweet | N
     try:
         author_id = tweet_data.get("author_id")
         user_data = _find_user(author_id, includes)
-        
+
         if not user_data:
             logger.warning("User not found: author_id=%s", author_id)
             return None
-        
+
         account = Account(
             fullname=user_data.get("name", "Unknown"),
             href=f"/{user_data.get('username', 'unknown')}",
             id=int(user_data.get("id", 0))
         )
-        
+
         metrics = tweet_data.get("public_metrics", {})
         created_at = tweet_data.get("created_at", "")
-        
+
         return Tweet(
             account=account,
             date=_format_date(created_at),
@@ -43,7 +43,7 @@ def map_tweet(tweet_data: dict[str, Any], includes: dict[str, Any]) -> Tweet | N
 def _find_user(user_id: str | None, includes: dict[str, Any]) -> dict[str, Any] | None:
     if not user_id:
         return None
-    
+
     users = includes.get("users", [])
     for user in users:
         if str(user.get("id")) == str(user_id):

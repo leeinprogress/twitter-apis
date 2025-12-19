@@ -1,4 +1,3 @@
-import pytest
 
 from app.infrastructure.twitter.mapper import (
     _format_date,
@@ -25,7 +24,7 @@ class TestMapTweet:
                 ]
             }
         }
-        
+
         includes = {
             "users": [
                 {
@@ -35,9 +34,9 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.text == "This is a test tweet #python #testing"
         assert tweet.likes == 42
@@ -48,20 +47,20 @@ class TestMapTweet:
         assert tweet.account.href == "/testuser"
         assert tweet.account.id == 987654321
         assert tweet.date == "12:57 PM - 7 Mar 2018"
-    
+
     def test_map_tweet_missing_author_id(self):
         tweet_data = {
             "id": "1234567890",
             "text": "Tweet without author",
             "created_at": "2018-03-07T12:57:00.000Z",
         }
-        
+
         includes = {"users": []}
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is None
-    
+
     def test_map_tweet_user_not_found(self):
         tweet_data = {
             "id": "1234567890",
@@ -69,7 +68,7 @@ class TestMapTweet:
             "text": "Tweet with missing user",
             "created_at": "2018-03-07T12:57:00.000Z",
         }
-        
+
         includes = {
             "users": [
                 {
@@ -79,18 +78,18 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is None
-    
+
     def test_map_tweet_missing_text(self):
         tweet_data = {
             "id": "1234567890",
             "author_id": "987654321",
             "created_at": "2018-03-07T12:57:00.000Z",
         }
-        
+
         includes = {
             "users": [
                 {
@@ -100,12 +99,12 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.text == ""
-    
+
     def test_map_tweet_missing_metrics(self):
         tweet_data = {
             "id": "1234567890",
@@ -113,7 +112,7 @@ class TestMapTweet:
             "text": "Tweet without metrics",
             "created_at": "2018-03-07T12:57:00.000Z",
         }
-        
+
         includes = {
             "users": [
                 {
@@ -123,14 +122,14 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.likes == 0
         assert tweet.replies == 0
         assert tweet.retweets == 0
-    
+
     def test_map_tweet_invalid_created_at(self):
         tweet_data = {
             "id": "1234567890",
@@ -138,7 +137,7 @@ class TestMapTweet:
             "text": "Tweet with invalid date",
             "created_at": "invalid-date-format",
         }
-        
+
         includes = {
             "users": [
                 {
@@ -148,19 +147,19 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.date == "invalid-date-format"
-    
+
     def test_map_tweet_missing_created_at(self):
         tweet_data = {
             "id": "1234567890",
             "author_id": "987654321",
             "text": "Tweet without date",
         }
-        
+
         includes = {
             "users": [
                 {
@@ -170,12 +169,12 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.date == ""
-    
+
     def test_map_tweet_empty_entities(self):
         tweet_data = {
             "id": "1234567890",
@@ -184,7 +183,7 @@ class TestMapTweet:
             "created_at": "2018-03-07T12:57:00.000Z",
             "entities": {}
         }
-        
+
         includes = {
             "users": [
                 {
@@ -194,12 +193,12 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.hashtags == []
-    
+
     def test_map_tweet_no_entities(self):
         tweet_data = {
             "id": "1234567890",
@@ -207,7 +206,7 @@ class TestMapTweet:
             "text": "Tweet without entities field",
             "created_at": "2018-03-07T12:57:00.000Z",
         }
-        
+
         includes = {
             "users": [
                 {
@@ -217,9 +216,9 @@ class TestMapTweet:
                 }
             ]
         }
-        
+
         tweet = map_tweet(tweet_data, includes)
-        
+
         assert tweet is not None
         assert tweet.hashtags == []
 
@@ -227,29 +226,29 @@ class TestMapTweet:
 class TestFormatDate:
     def test_format_date_success(self):
         iso_date = "2018-03-07T12:57:00.000Z"
-        
+
         formatted = _format_date(iso_date)
-        
+
         assert formatted == "12:57 PM - 7 Mar 2018"
-    
+
     def test_format_date_with_leading_zero(self):
         iso_date = "2018-03-07T09:30:00.000Z"
-        
+
         formatted = _format_date(iso_date)
-        
+
         assert formatted == "9:30 AM - 7 Mar 2018"
-    
+
     def test_format_date_invalid_format(self):
         iso_date = "invalid-date"
-        
+
         formatted = _format_date(iso_date)
-        
+
         assert formatted == "invalid-date"
-    
+
     def test_format_date_empty_string(self):
         iso_date = ""
-        
+
         formatted = _format_date(iso_date)
-        
+
         assert formatted == ""
 

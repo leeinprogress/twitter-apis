@@ -26,11 +26,11 @@ def retry_on_exception(
         async def async_wrapper(*args: Any, **kwargs: Any) -> T:
             current_delay = delay
             last_exception = None
-            
+
             for attempt in range(max_retries + 1):
                 try:
-                    result = await func(*args, **kwargs) 
-                    return result  
+                    result = await func(*args, **kwargs)  # type: ignore[misc]
+                    return result  # type: ignore[return-value]
                 except exceptions as e:
                     last_exception = e
                     if attempt < max_retries:
@@ -53,16 +53,16 @@ def retry_on_exception(
                             type(e).__name__,
                             str(e)
                         )
-            
+
             if last_exception:
                 raise last_exception
             raise RuntimeError("Unexpected retry state")
-        
+
         @functools.wraps(func)
         def sync_wrapper(*args: Any, **kwargs: Any) -> T:
             current_delay = delay
             last_exception = None
-            
+
             for attempt in range(max_retries + 1):
                 try:
                     return func(*args, **kwargs)
@@ -88,15 +88,15 @@ def retry_on_exception(
                             type(e).__name__,
                             str(e)
                         )
-            
+
             if last_exception:
                 raise last_exception
             raise RuntimeError("Unexpected retry state")
-        
+
         if asyncio.iscoroutinefunction(func):
             return cast(Callable[..., T], async_wrapper)
         return cast(Callable[..., T], sync_wrapper)
-    
+
     return decorator
 
 
@@ -109,8 +109,8 @@ def measure_time(func: Callable[..., T]) -> Callable[..., T]:
     async def async_wrapper(*args: Any, **kwargs: Any) -> T:
         start = time.perf_counter()
         try:
-            result = await func(*args, **kwargs)  
-            return result
+            result = await func(*args, **kwargs)  # type: ignore[misc]
+            return result  # type: ignore[return-value]
         finally:
             elapsed = time.perf_counter() - start
             logger.info(
@@ -118,7 +118,7 @@ def measure_time(func: Callable[..., T]) -> Callable[..., T]:
                 func.__name__,
                 round(elapsed * 1000, 2)
             )
-    
+
     @functools.wraps(func)
     def sync_wrapper(*args: Any, **kwargs: Any) -> T:
         start = time.perf_counter()
@@ -132,7 +132,7 @@ def measure_time(func: Callable[..., T]) -> Callable[..., T]:
                 func.__name__,
                 round(elapsed * 1000, 2)
             )
-    
+
     if asyncio.iscoroutinefunction(func):
         return cast(Callable[..., T], async_wrapper)
     return cast(Callable[..., T], sync_wrapper)

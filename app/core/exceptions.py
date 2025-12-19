@@ -1,4 +1,4 @@
-class TwitterAPIError(Exception):    
+class TwitterAPIError(Exception):
     def __init__(self, message: str, status_code: int = 500) -> None:
         self.message = message
         self.status_code = status_code
@@ -12,8 +12,8 @@ class TwitterAuthenticationError(TwitterAPIError):
 
 class TwitterRateLimitError(TwitterAPIError):
     def __init__(
-        self, 
-        message: str = "Twitter API rate limit exceeded", 
+        self,
+        message: str = "Twitter API rate limit exceeded",
         reset_time: int | None = None
     ) -> None:
         self.reset_time = reset_time

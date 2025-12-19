@@ -34,31 +34,31 @@ class TwitterClient(TweetRepository):
         self.authenticator = TwitterAuthenticator(settings)
         self.rate_limiter = rate_limiter or RateLimiter()
         self.base_url = settings.twitter_api_base_url
-    
+
     @measure_time
     async def get_tweets_by_hashtag(self, hashtag: str, limit: int = 30) -> list[Tweet]:
         hashtag = hashtag.lstrip("#")
         limit = min(limit, self.settings.twitter_max_results)
         logger.info(f"Fetching tweets by hashtag: {hashtag}, limit: {limit}")
-        
+
         query = f"#{hashtag}"
         tweets = await self._search_tweets(query, limit)
-        
+
         logger.info(f"Tweets fetched for hashtag '{hashtag}': {len(tweets)} tweets")
         return tweets
-    
+
     @measure_time
     async def get_tweets_by_user(self, username: str, limit: int = 30) -> list[Tweet]:
         username = username.lstrip("@")
         limit = min(limit, self.settings.twitter_max_results)
         logger.info(f"Fetching tweets by user: {username}, limit: {limit}")
-        
+
         user_id = await self._get_user_id(username)
         tweets = await self._get_user_timeline(user_id, limit)
-        
+
         logger.info(f"Tweets fetched for user '{username}': {len(tweets)} tweets")
         return tweets
-    
+
     @retry_on_exception(
         max_retries=3,
         delay=1.0,
@@ -67,7 +67,7 @@ class TwitterClient(TweetRepository):
     )
     async def _search_tweets(self, query: str, limit: int) -> list[Tweet]:
         await self.rate_limiter.acquire("search_tweets")
-        
+
         url = f"{self.base_url}/tweets/search/recent"
         params = {
             "query": query,
@@ -76,24 +76,24 @@ class TwitterClient(TweetRepository):
             "expansions": "author_id",
             "user.fields": "id,name,username"
         }
-        
+
         try:
             response = await self.http_client.get(
                 url,
-                params=params,
+                params=params,  # type: ignore[arg-type]
                 headers=self.authenticator.get_headers(),
                 timeout=self.settings.twitter_request_timeout,
             )
-            
+
             self._handle_response_errors(response)
-            
+
             data = response.json()
             return self._parse_tweets_response(data)
-        
+
         except httpx.HTTPError as e:
             logger.error(f"Twitter API HTTP error for query '{query}': {e}")
             raise TwitterServiceUnavailableError(f"Twitter API request failed: {e}") from e
-    
+
     @retry_on_exception(
         max_retries=3,
         delay=1.0,
@@ -102,9 +102,9 @@ class TwitterClient(TweetRepository):
     )
     async def _get_user_id(self, username: str) -> str:
         await self.rate_limiter.acquire("get_user")
-        
+
         url = f"{self.base_url}/users/by/username/{username}"
-        
+
         try:
             response = await self.http_client.get(
                 url,
@@ -112,21 +112,21 @@ class TwitterClient(TweetRepository):
                 headers=self.authenticator.get_headers(),
                 timeout=self.settings.twitter_request_timeout,
             )
-            
+
             self._handle_response_errors(response)
-            
+
             data = response.json()
             user_data = data.get("data")
-            
+
             if not user_data or "id" not in user_data:
                 raise TwitterResourceNotFoundError(f"User @{username} not found")
-            
+
             return str(user_data["id"])
-        
+
         except httpx.HTTPError as e:
             logger.error(f"Twitter API HTTP error for username '{username}': {e}")
             raise TwitterServiceUnavailableError(f"Twitter API request failed: {e}") from e
-    
+
     @retry_on_exception(
         max_retries=3,
         delay=1.0,
@@ -135,7 +135,7 @@ class TwitterClient(TweetRepository):
     )
     async def _get_user_timeline(self, user_id: str, limit: int) -> list[Tweet]:
         await self.rate_limiter.acquire("user_timeline")
-        
+
         url = f"{self.base_url}/users/{user_id}/tweets"
         params = {
             "max_results": limit,
@@ -143,40 +143,40 @@ class TwitterClient(TweetRepository):
             "expansions": "author_id",
             "user.fields": "id,name,username"
         }
-        
+
         try:
             response = await self.http_client.get(
                 url,
-                params=params,
+                params=params,  # type: ignore[arg-type]
                 headers=self.authenticator.get_headers(),
                 timeout=self.settings.twitter_request_timeout,
             )
-            
+
             self._handle_response_errors(response)
-            
+
             data = response.json()
             return self._parse_tweets_response(data)
-        
+
         except httpx.HTTPError as e:
             logger.error(f"Twitter API HTTP error for user_id '{user_id}': {e}")
             raise TwitterServiceUnavailableError(f"Twitter API request failed: {e}") from e
-    
+
     def _handle_response_errors(self, response: httpx.Response) -> None:
         if response.is_success:
             return
-        
+
         status_code = response.status_code
         error_data = {}
-        
+
         with suppress(Exception):
             error_data = response.json()
-        
+
         error_message = error_data.get("detail", response.text)
-        
+
         logger.error(
             f"Twitter API error: status={status_code}, url={response.url}, error={error_message}"
         )
-        
+
         if status_code == 401:
             raise TwitterAuthenticationError("Invalid or expired Twitter API credentials")
         elif status_code == 403:
@@ -194,19 +194,19 @@ class TwitterClient(TweetRepository):
             raise TwitterServiceUnavailableError(f"Twitter API error: {error_message}")
         else:
             raise TwitterAPIError(f"Twitter API error: {error_message}", status_code)
-    
+
     def _parse_tweets_response(self, data: dict[str, Any]) -> list[Tweet]:
         tweets_data = data.get("data", [])
         includes = data.get("includes", {})
-        
+
         if not tweets_data:
             logger.warning("No tweets in response")
             return []
-        
+
         tweets: list[Tweet] = []
         for tweet_data in tweets_data:
             tweet = map_tweet(tweet_data, includes)
             if tweet:
                 tweets.append(tweet)
-        
+
         return tweets

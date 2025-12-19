@@ -15,10 +15,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         logger.info(
             "request_started",
-            method=request.method,
-            path=request.url.path,
-            query_params=dict(request.query_params),
-            client_host=request.client.host if request.client else None,
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "query_params": dict(request.query_params),
+                "client_host": request.client.host if request.client else None,
+            },
         )
 
         response = await call_next(request)
@@ -26,10 +28,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
         logger.info(
             "request_completed",
-            method=request.method,
-            path=request.url.path,
-            status_code=response.status_code,
-            duration_ms=duration_ms,
+            extra={
+                "method": request.method,
+                "path": request.url.path,
+                "status_code": response.status_code,
+                "duration_ms": duration_ms,
+            },
         )
 
         return response

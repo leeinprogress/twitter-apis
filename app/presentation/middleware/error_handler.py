@@ -11,9 +11,11 @@ logger = get_logger(__name__)
 async def twitter_api_error_handler(request: Request, exc: TwitterAPIError) -> JSONResponse:
     logger.error(
         "twitter_api_error",
-        path=request.url.path,
-        error=exc.message,
-        status_code=exc.status_code,
+        extra={
+            "path": request.url.path,
+            "error": exc.message,
+            "status_code": exc.status_code,
+        },
     )
 
     error_response = ErrorResponse(
@@ -31,9 +33,11 @@ async def twitter_api_error_handler(request: Request, exc: TwitterAPIError) -> J
 async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception(
         "unhandled_exception",
-        path=request.url.path,
-        error=str(exc),
-        exc_type=type(exc).__name__,
+        extra={
+            "path": request.url.path,
+            "error": str(exc),
+            "exc_type": type(exc).__name__,
+        },
     )
 
     error_response = ErrorResponse(

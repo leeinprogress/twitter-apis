@@ -18,12 +18,12 @@ class RedisCacheService(CacheService):
         self.settings = settings
         self.enabled = settings.cache_enabled
         self.ttl = settings.cache_ttl
-        
+
         if not self.enabled:
             logger.info("Cache disabled")
             self._cache: Cache | None = None
             return
-        
+
         if settings.redis_enabled:
             try:
                 parsed = urlparse(settings.redis_url)
@@ -42,11 +42,11 @@ class RedisCacheService(CacheService):
         else:
             self._cache = Cache(Cache.MEMORY, serializer=JsonSerializer())
             logger.info("Cache initialized with memory backend")
-    
+
     async def get(self, key: str) -> list[Tweet] | None:
         if not self.enabled or not self._cache:
             return None
-        
+
         try:
             cached_data = await self._cache.get(key)
             if cached_data:
@@ -57,11 +57,11 @@ class RedisCacheService(CacheService):
         except Exception as e:
             logger.error(f"Cache get error for key '{key}': {e}")
             return None
-    
+
     async def set(self, key: str, value: list[Tweet], ttl: int) -> None:
         if not self.enabled or not self._cache:
             return
-        
+
         try:
             serialized = self._serialize_tweets(value)
             await self._cache.set(key, serialized, ttl=ttl)
@@ -69,17 +69,17 @@ class RedisCacheService(CacheService):
         except Exception as e:
             logger.error(f"Cache set error for key '{key}': {e}")
             raise CacheError(f"Failed to set cache: {e}") from e
-    
+
     async def delete(self, key: str) -> None:
         if not self.enabled or not self._cache:
             return
-        
+
         try:
             await self._cache.delete(key)
             logger.debug(f"Cache deleted: {key}")
         except Exception as e:
             logger.error(f"Cache delete error for key '{key}': {e}")
-    
+
     def _serialize_tweets(self, tweets: list[Tweet]) -> list[dict[str, Any]]:
         return [
             {
@@ -97,7 +97,7 @@ class RedisCacheService(CacheService):
             }
             for tweet in tweets
         ]
-    
+
     def _deserialize_tweets(self, data: list[dict[str, Any]]) -> list[Tweet]:
         tweets = []
         for item in data:
@@ -122,7 +122,7 @@ class RedisCacheService(CacheService):
                 logger.warning(f"Tweet deserialization error: {e}")
                 continue
         return tweets
-    
+
     async def close(self) -> None:
         if self._cache:
             await self._cache.close()
