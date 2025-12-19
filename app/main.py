@@ -1,26 +1,13 @@
-from fastapi import FastAPI
+from app.bootstrap.app_factory import create_app
+from app.bootstrap.config import get_settings
+from app.utils.logger import configure_logging
 
-from app import __version__
-from app.bootstrap.middleware import setup_middleware
-from app.bootstrap.routes import setup_routes
+configure_logging()
 
-# Create FastAPI app
-app = FastAPI(
-    title="Twitter API Service",
-    version=__version__,
-    description="RESTful API for fetching tweets by hashtag and user",
-)
-
-# Setup middleware
-setup_middleware(app)
-
-# Setup routes
-setup_routes(app)
+app = create_app()
 
 if __name__ == "__main__":
     import uvicorn
-
-    from app.bootstrap.config import get_settings
 
     settings = get_settings()
     uvicorn.run(
@@ -28,4 +15,5 @@ if __name__ == "__main__":
         host=settings.host,
         port=settings.port,
         reload=settings.debug,
+        log_level=settings.log_level.lower(),
     )
