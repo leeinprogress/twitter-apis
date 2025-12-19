@@ -117,8 +117,10 @@ class TestTwitterClient:
         mock_response.headers = {"x-rate-limit-reset": "1234567890"}
         mock_http_client.get.return_value = mock_response
         
-        with pytest.raises(TwitterRateLimitError):
+        with pytest.raises(TwitterRateLimitError) as exc_info:
             await twitter_client.get_tweets_by_hashtag("Python", limit=10)
+        
+        assert exc_info.value.reset_time == 1234567890
     
     @pytest.mark.asyncio
     async def test_limit_validation(

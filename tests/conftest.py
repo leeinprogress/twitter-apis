@@ -12,6 +12,8 @@ os.environ.setdefault("HOST", "0.0.0.0")
 os.environ.setdefault("PORT", "8000")
 os.environ.setdefault("TWITTER_BEARER_TOKEN", "test_bearer_token")
 os.environ.setdefault("TWITTER_API_BASE_URL", "https://api.twitter.com/2")
+os.environ.setdefault("TWITTER_MAX_RESULTS", "100")
+os.environ.setdefault("TWITTER_REQUEST_TIMEOUT", "30")
 os.environ.setdefault("CACHE_ENABLED", "false")
 os.environ.setdefault("CACHE_TTL", "300")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
@@ -37,6 +39,8 @@ def test_settings() -> Settings:
         port=8000,
         twitter_bearer_token="test_bearer_token",
         twitter_api_base_url="https://api.twitter.com/2",
+        twitter_max_results=100,
+        twitter_request_timeout=30,
         cache_enabled=False,
         cache_ttl=300,
         redis_url="redis://localhost:6379",

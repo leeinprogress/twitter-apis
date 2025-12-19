@@ -122,7 +122,7 @@ def measure_time(func: Callable[..., T]) -> Callable[..., T]:
             logger.info(
                 "Function '%s' executed in %.2f ms",
                 func.__name__,
-                elapsed * 1000
+                round(elapsed * 1000, 2)
             )
     
     @functools.wraps(func)
@@ -136,7 +136,7 @@ def measure_time(func: Callable[..., T]) -> Callable[..., T]:
             logger.info(
                 "Function '%s' executed in %.2f ms",
                 func.__name__,
-                elapsed * 1000
+                round(elapsed * 1000, 2)
             )
     
     if asyncio.iscoroutinefunction(func):

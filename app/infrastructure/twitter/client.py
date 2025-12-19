@@ -30,10 +30,10 @@ class TwitterClient(TweetRepository):
         rate_limiter: RateLimiter | None = None
     ):
         self.settings = settings
-        self.base_url = settings.twitter_api_base_url
         self.http_client = http_client
         self.authenticator = TwitterAuthenticator(settings)
         self.rate_limiter = rate_limiter or RateLimiter()
+        self.base_url = settings.twitter_api_base_url
     
     @measure_time
     async def get_tweets_by_hashtag(self, hashtag: str, limit: int = 30) -> list[Tweet]:
@@ -48,7 +48,7 @@ class TwitterClient(TweetRepository):
             List of Tweet entities
         """
         hashtag = hashtag.lstrip("#")
-        limit = min(limit, 100)
+        limit = min(limit, self.settings.twitter_max_results)
         logger.info(f"Fetching tweets by hashtag: {hashtag}, limit: {limit}")
         
         query = f"#{hashtag}"
@@ -70,7 +70,7 @@ class TwitterClient(TweetRepository):
             List of Tweet entities
         """
         username = username.lstrip("@")
-        limit = min(limit, 100)
+        limit = min(limit, self.settings.twitter_max_results)
         logger.info(f"Fetching tweets by user: {username}, limit: {limit}")
         
         user_id = await self._get_user_id(username)
@@ -93,7 +93,7 @@ class TwitterClient(TweetRepository):
         params = {
             "query": query,
             "max_results": limit,
-            "tweet.fields": "created_at,author_id,public_metrics,entities",
+            "tweet.fields": "created_at,public_metrics,entities,author_id",
             "expansions": "author_id",
             "user.fields": "id,name,username"
         }
@@ -102,7 +102,8 @@ class TwitterClient(TweetRepository):
             response = await self.http_client.get(
                 url,
                 params=params,
-                headers=self.authenticator.get_headers()
+                headers=self.authenticator.get_headers(),
+                timeout=self.settings.twitter_request_timeout,
             )
             
             self._handle_response_errors(response)
@@ -130,7 +131,8 @@ class TwitterClient(TweetRepository):
             response = await self.http_client.get(
                 url,
                 params={"user.fields": "id,name,username"},
-                headers=self.authenticator.get_headers()
+                headers=self.authenticator.get_headers(),
+                timeout=self.settings.twitter_request_timeout,
             )
             
             self._handle_response_errors(response)
@@ -169,7 +171,8 @@ class TwitterClient(TweetRepository):
             response = await self.http_client.get(
                 url,
                 params=params,
-                headers=self.authenticator.get_headers()
+                headers=self.authenticator.get_headers(),
+                timeout=self.settings.twitter_request_timeout,
             )
             
             self._handle_response_errors(response)
@@ -205,8 +208,12 @@ class TwitterClient(TweetRepository):
         elif status_code == 404:
             raise TwitterResourceNotFoundError("Requested resource not found")
         elif status_code == 429:
-            # Note: rate limit reset time could be extracted from response.headers.get("x-rate-limit-reset")
-            raise TwitterRateLimitError("Twitter API rate limit exceeded")
+            # Extract rate limit reset time if available
+            reset_time = response.headers.get("x-rate-limit-reset")
+            raise TwitterRateLimitError(
+                "Twitter API rate limit exceeded",
+                reset_time=int(reset_time) if reset_time else None,
+            )
         elif status_code >= 500:
             raise TwitterServiceUnavailableError(f"Twitter API error: {error_message}")
         else:

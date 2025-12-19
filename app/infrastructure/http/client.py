@@ -12,7 +12,8 @@ def create_http_client(settings: Settings) -> httpx.AsyncClient:
     
     timeout = httpx.Timeout(
         connect=5.0,
-        read=30.0,
+        read=settings.twitter_request_timeout,
+        write=settings.twitter_request_timeout,
         pool=5.0,
     )
     

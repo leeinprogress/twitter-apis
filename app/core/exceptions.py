@@ -11,7 +11,12 @@ class TwitterAuthenticationError(TwitterAPIError):
 
 
 class TwitterRateLimitError(TwitterAPIError):
-    def __init__(self, message: str = "Twitter API rate limit exceeded") -> None:
+    def __init__(
+        self, 
+        message: str = "Twitter API rate limit exceeded", 
+        reset_time: int | None = None
+    ) -> None:
+        self.reset_time = reset_time
         super().__init__(message, status_code=429)
 
 
