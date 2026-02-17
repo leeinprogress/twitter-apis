@@ -80,7 +80,7 @@ class TwitterClient(TweetRepository):
         try:
             response = await self.http_client.get(
                 url,
-                params=params,  # type: ignore[arg-type]
+                params=params,
                 headers=self.authenticator.get_headers(),
                 timeout=self.settings.twitter_request_timeout,
             )
@@ -147,7 +147,7 @@ class TwitterClient(TweetRepository):
         try:
             response = await self.http_client.get(
                 url,
-                params=params,  # type: ignore[arg-type]
+                params=params,
                 headers=self.authenticator.get_headers(),
                 timeout=self.settings.twitter_request_timeout,
             )

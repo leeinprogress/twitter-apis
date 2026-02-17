@@ -29,8 +29,8 @@ def retry_on_exception(
 
             for attempt in range(max_retries + 1):
                 try:
-                    result = await func(*args, **kwargs)  # type: ignore[misc]
-                    return result  # type: ignore[return-value]
+                    result = await func(*args, **kwargs)
+                    return result
                 except exceptions as e:
                     last_exception = e
                     if attempt < max_retries:
@@ -109,8 +109,8 @@ def measure_time(func: Callable[..., T]) -> Callable[..., T]:
     async def async_wrapper(*args: Any, **kwargs: Any) -> T:
         start = time.perf_counter()
         try:
-            result = await func(*args, **kwargs)  # type: ignore[misc]
-            return result  # type: ignore[return-value]
+            result = await func(*args, **kwargs)
+            return result
         finally:
             elapsed = time.perf_counter() - start
             logger.info(
