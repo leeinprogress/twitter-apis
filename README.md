@@ -1,7 +1,5 @@
 # Twitter API Service
 
-> **GitHub Repository**: https://github.com/leeinprogress/anymind-twitter-apis
-
 RESTful API service for fetching tweets from Twitter API v2.
 
 ##  Features
