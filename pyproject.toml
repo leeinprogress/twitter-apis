@@ -1,5 +1,5 @@
 [project]
-name = "anymind-twitter-apis"
+name = "twitter-api-service"
 version = "1.0.0"
 description = "RESTful API service for fetching tweets from Twitter API v2"
 requires-python = ">=3.12"
