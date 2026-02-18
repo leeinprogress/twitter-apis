@@ -43,7 +43,7 @@ Clean Architecture with strict layer separation and dependency inversion:
 
 ```bash
 # Clone and setup
-git clone <repository-url>
+git clone https://github.com/leeinprogress/twitter-apis.git
 cd twitter-api-service
 python3.12 -m venv venv
 source venv/bin/activate
